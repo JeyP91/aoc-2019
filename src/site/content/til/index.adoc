@@ -8,7 +8,7 @@
 
 :icons: font
 
-include::../generated/stats.adoc[]
+The stats where moved to the link:../solutions/byCoder.html[Solutions by Coder] section
 
 include::../../../docs/learned.adoc[]
 

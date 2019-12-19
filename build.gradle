@@ -1,3 +1,4 @@
+import groovy.json.*
 buildscript {
     dependencies {
         classpath 'org.asciidoctor:asciidoctorj-diagram:1.5.4.1'
@@ -45,7 +46,7 @@ task generateIndex() {
     doLast {
         def src = new File('.')
 
-        def stats = [coders:0,languages:0,stars:[:],days:[]]
+        def stats = [coders:0,languages:0,stars:[:],days:[],lang:[:]]
         // build up an index of all code
         def days = [:]
         def languages = [:]
@@ -66,6 +67,13 @@ task generateIndex() {
                                     languages[language.name]=[]
                                 }
                                 languages[language.name] << ([coder.name, day.name])
+                                if (!stats.lang[language.name]) {
+                                    stats.lang[language.name]=[:]
+                                }
+                                if (!stats.lang[language.name][day.name]) {
+                                    stats.lang[language.name][day.name]=[]
+                                }
+                                stats.lang[language.name][day.name]<<coder.name
                             }
                         }
                     }
@@ -91,6 +99,9 @@ task generateIndex() {
 include::../../../config.adoc[]
 
 == $coder
+
+include::../../../../../../profiles/${coder}.adoc[]
+
 
 """)
             coderIndex += "* link:../generated/coder/$coder/generatedDays.html[$coder]\n\n"
@@ -120,6 +131,12 @@ include::${file.canonicalPath-(currentFolder.canonicalPath+'/')}[]
                     readme.write(text)
                 }
                 if (readme.exists()) {
+                    daysFile.append("""
+++++
+<a id="${datum[0]}" />
+++++
+
+""")
                     daysFile.append("=== Day ${datum[0]-"day"}: ${datum[1]}\n\n")
                     daysFile.append("include::../../../../../../${datum[0]}/${datum[1]}/${coder}/README.adoc[leveloffset=+2]\n\n")
                 }
@@ -194,17 +211,117 @@ Here are some stats for those who are interested.
 
 The repository contains solutions in ${stats.languages} languages by ${stats.coders} developers.
 
-[cols="${stats.days.size()+2}"]
+include::../../../../profiles/allUsers.adoc[]
+
+[cols="${stats.days.size()+3}"]
 |===
-|Developer ^| ${stats.days.collect{"Day $it"}.join(' ^| ')} ^| Sum
+2+^.>|  ${stats.days.size()}+^| Day .2+^.>| Sum
+2+^.>| Developer ^| ${stats.days.collect{"$it"}.join(' ^| ')}
 """
         def emojis=['👋','🕯','🎄','🎶','❄','🔔','🧦','☃','🕯🕯','🎁','🎄','🔔','☃','❄','⛪','🕯🕯🕯','🦌','🧝','🤶','🎄','☃','❄','🕯🕯🕯🕯','🎶','🎅','👪👼🦌']
         stats.stars.sort{e1, e2 -> e2.value.size() <=> e1.value.size()}.each{ coder, stars ->
-            statsFile += "|$coder ^| ${stats.days.collect{ stars[it]?emojis[it as Integer]:'-' }.join(' ^| ')} ^| ${stars.size()}\n"
+            statsFile += "a| image::{${coder}-avatar}[width=32px] a| link:/generated/coder/${coder}/generatedDays.html[$coder] "
+            def dayList = stats.days.collect {
+                                def entry = '-'
+                                if (stars[it]) {
+                                    def emojiOfTheDay = emojis[it as Integer]
+                                    def currentDayAnchor = it.toString().padLeft(2, '0')
+                                    entry = "link:/generated/coder/${coder}/generatedDays.html#day${currentDayAnchor}[${emojiOfTheDay}]"
+                                }
+                                return entry
+                            }.join(' ^| ')
+            statsFile += "^| ${dayList} "
+            statsFile += "^| ${stars.size()}\n"
         }
         statsFile += """
 |===
 """
-        new File('src/site/content/generated/stats.adoc').write(statsFile)
+        new File('src/site/content/generated/stats.adoc').write(statsFile, 'utf-8')
+
+        // Solutions by Language as stats
+        def statsFile2 = """
+
+include::../../../../profiles/allUsers.adoc[]
+
+[cols="${stats.days.size()+3}"]
+|===
+.2+^.>| Language ${stats.days.size()}+^| Day .2+^.>| #Days .2+^.>| #Sol
+^| ${stats.days.collect{"$it"}.join(' ^| ')}
+"""
+        println stats
+        stats.lang.sort{e1, e2 -> e2.value.size() <=> e1.value.size()}.each{ currentLanguage ->
+            statsFile2 += "a| ${currentLanguage.key} "
+            def langCoders = 0
+            def langDays = 0
+            def codersForLang = currentLanguage.value
+            def dayList = stats.days.collect { currentDay ->
+                def entry = '-'
+                def currentDayAnchor = "day"+currentDay.toString().padLeft(2, '0')
+                if (codersForLang[currentDayAnchor]) {
+
+                    langDays ++
+                    entry = codersForLang[currentDayAnchor].collect { coder ->
+                        langCoders ++
+                       "image:{${coder}-avatar}[width=32,link=/generated/coder/${coder}/generatedDays.html#_day_${currentDay.padLeft(2,'0')}_${currentLanguage.key}]"
+                    }.join(" ")
+                }
+                return entry
+            }.join(' ^| ')
+            statsFile2 += "^| ${dayList} "
+            statsFile2 += "^| ${langDays} ^| ${langCoders}\n"
+        }
+        statsFile2 += """
+|===
+"""
+        new File('src/site/content/generated/stats2.adoc').write(statsFile2, 'utf-8')
+
+        // End Solutions by Language
+
+        def userInfo = ""
+        def allUsers = ""
+        stats.stars.each {coder, stars->
+            File coderProfile = new File("./profiles/${coder}.adoc")
+            allUsers += "include::${coder}.adoc[tags=!free-form]\n"
+            if (!coderProfile.exists()) {
+                def api = "https://api.github.com/users/"
+                def res = []
+                try {
+                    res = new JsonSlurper().parseText(new URL(api + coder).text)
+                } catch (Exception e) {
+                    println "couldn't read $coder : $e"
+                }
+                coderProfile.write("""
+:${coder}-avatar: ${res['avatar_url']}
+:${coder}-twitter: -
+:${coder}-realName: ${res['name']}
+:${coder}-blog: -
+
+
+//tag::free-form[]
+
+[cols="1,5"]
+|===
+| image:{${coder}-avatar}[]
+a| **$coder** +
+//{${coder}-realName} +
+icon:github[]: ${res['html_url']}[${coder}]
+ifeval::[{${coder}-twitter} != -]
+  icon:twitter[] : https://twitter.com/{${coder}-twitter}[${coder}-twitter] +
+endif::[]
+ifeval::[{${coder}-blog} != -]
+  Blog : {${coder}-blog} 
+endif::[]
+|===
+
+=== About me
+
+Nothing here yet. Update your profile at https://github.com/docToolchain/aoc-2019/blob/master/profiles/${coder}.adoc[/profiles/${coder}.adoc] 
+
+//end::free-form[]
+
+""")
+            }
+        }
+        new File("./profiles/allUsers.adoc").write(allUsers)
     }
 }

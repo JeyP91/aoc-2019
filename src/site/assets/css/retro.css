@@ -173,3 +173,12 @@ ol.linenums li {
 div.content {
     background-color: rgba(255,255,255,0.6);
 }
+td div.content {
+    background-color: transparent !important;
+}
+p.tableblock span.image img {
+    max-width: none !important;
+}
+td div.content div.imageblock div.content img {
+    max-width: none !important;
+}
