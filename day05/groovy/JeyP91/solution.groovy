@@ -1,163 +1,150 @@
 #!/usr/bin/env groovy
 
+test()
+
 // Read input
 ArrayList<String> instructionsAsString = Arrays.asList(new File('input.txt').text.split("\\s*,\\s*"))
-// ArrayList<String> instructionsAsString = Arrays.asList(new File('input_test.txt').text.split("\\s*,\\s*"))
+List<Integer> instructions
+IntCodeComputer icc
+ArrayList<Integer> inputValues
+ArrayList<Integer> outputValues
 
+/******
+ PART 1
+ ******/
 // Convert string array to text
-List<Integer> instructions = new ArrayList<Integer>()
-for(String s : instructionsAsString) instructions.add(Integer.valueOf(s));
+instructions = new ArrayList<Integer>()
+for(String s : instructionsAsString) instructions.add(Integer.valueOf(s))
 
-// Iterate over complete program and execute operations
-int i = 0
-while (i < instructions.size()) {
-    Instruction inst = new Instruction(instructions[i])
-    switch (inst.getOpcode()) {
-        // Addition
-        case 1:
-            // Calculation values and location based on opcode-parameters
-            int value1 = inst.getParameter1() == 0 ? instructions[instructions[i+1]] : instructions[i+1]
-            int value2 = inst.getParameter2() == 0 ? instructions[instructions[i+2]] : instructions[i+2]
-            int resultLocation = instructions[i+3]
+// Create computer object
+icc = new IntCodeComputer(instructions)
+inputValues = new ArrayList<>(Arrays.asList(1))
+icc.setInput(inputValues)
+outputValues = icc.execute()
+println "Solution Part 1: " + outputValues[outputValues.size()-1]
 
-            // Calculate addition
-            instructions[resultLocation] = value1 + value2
+/******
+ PART 2
+ ******/
+// Convert string array to text
+instructions = new ArrayList<Integer>()
+for(String s : instructionsAsString) instructions.add(Integer.valueOf(s))
 
-            // Jump to next instruction
-            i = i + 4
-            continue
+// Create computer object
+icc = new IntCodeComputer(instructions)
+inputValues = new ArrayList<>(Arrays.asList(5))
+icc.setInput(inputValues)
+outputValues = icc.execute()
+println "Solution Part 2: " + outputValues[outputValues.size()-1]
 
-        // Multiplication
-        case 2:
-            // Calculation values and location based on opcode-parameters
-            int value1 = inst.getParameter1() == 0 ? instructions[instructions[i+1]] : instructions[i+1]
-            int value2 = inst.getParameter2() == 0 ? instructions[instructions[i+2]] : instructions[i+2]
-            int resultLocation = instructions[i+3]
+static void test() {
+    ArrayList<Integer> instructions
+    IntCodeComputer icc
+    ArrayList<Integer> inputValues
+    ArrayList<Integer> outputValues
 
-            // Calculate multiplication
-            instructions[resultLocation] = value1 * value2
+    instructions = new ArrayList<>(Arrays.asList(3,9,8,9,10,9,4,9,99,-1,8))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(8))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1
 
-            // Jump to next instruction
-            i = i + 4
-            continue
+    instructions = new ArrayList<>(Arrays.asList(3,9,8,9,10,9,4,9,99,-1,8))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(7))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 0
 
-        // Input
-        case 3:
-            // Read input and write to location
-            print "Input: "
-            int input = Integer.parseInt(new BufferedReader(new InputStreamReader(System.in)).readLine())
-            instructions[instructions[i+1]] = input
+    instructions = new ArrayList<>(Arrays.asList(3,9,7,9,10,9,4,9,99,-1,8))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(7))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1
 
-            // Jump to next instruction
-            i = i + 2
-            continue
+    instructions = new ArrayList<>(Arrays.asList(3,9,7,9,10,9,4,9,99,-1,8))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(8))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 0
 
-        // Output
-        case 4:
-            // Calculation output source based on opcode-parameters
-            int output = inst.getParameter1() == 0 ? instructions[instructions[i+1]] : instructions[i+1]
-            println "Output: $output"
+    instructions = new ArrayList<>(Arrays.asList(3,3,1108,-1,8,3,4,3,99))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(8))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1
 
-            // Jump to next instruction
-            i = i + 2
-            continue
+    instructions = new ArrayList<>(Arrays.asList(3,3,1108,-1,8,3,4,3,99))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(7))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 0
 
-        // jump-if-true
-        case 5:
-            // Calculation parameters based on opcode-parameters
-            int par1 = inst.getParameter1() == 0 ? instructions[instructions[i+1]] : instructions[i+1]
-            int par2 = inst.getParameter2() == 0 ? instructions[instructions[i+2]] : instructions[i+2]
-            
-            // Evaluate jump to next instruction based on true parameter
-            if(par1 != 0) {
-                i = par2
-            }
-            else {
-                i = i + 3
-            }
-            continue
+    instructions = new ArrayList<>(Arrays.asList(3,3,1107,-1,8,3,4,3,99))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(7))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1
 
-        // jump-if-false
-        case 6:
-            // Calculation parameters based on opcode-parameters
-            int par1 = inst.getParameter1() == 0 ? instructions[instructions[i+1]] : instructions[i+1]
-            int par2 = inst.getParameter2() == 0 ? instructions[instructions[i+2]] : instructions[i+2]
+    instructions = new ArrayList<>(Arrays.asList(3,3,1107,-1,8,3,4,3,99))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(8))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 0
 
-            // Evaluate jump to next instruction based on false parameter
-            if(par1 == 0) {
-                i = par2
-            }
-            else {
-                i = i + 3
-            }
-            continue
+    instructions = new ArrayList<>(Arrays.asList(3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(0))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 0
 
-        // less-then
-        case 7:
-            // Calculation parameters based on opcode-parameters
-            // tag::lessThen1[]
-            int par1 = inst.getParameter1() == 0 ? instructions[instructions[i+1]] : instructions[i+1]
-            int par2 = inst.getParameter2() == 0 ? instructions[instructions[i+2]] : instructions[i+2]
-            int resultLocation = instructions[i+3]
-            // end::lessThen1[]
+    instructions = new ArrayList<>(Arrays.asList(3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(1))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1
 
-            // Evaluate less-then check and write 1 or 0 to location
-            // tag::lessThen2[]
-            instructions[resultLocation] = par1 < par2 ? 1 : 0
-            // end::lessThen2[]
+    instructions = new ArrayList<>(Arrays.asList(3,3,1105,-1,9,1101,0,0,12,4,12,99,1))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(0))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 0
 
-            // Jump to next instruction
-            // tag::lessThen3[]
-            i = i + 4
-            // end::lessThen3[]
-            continue
+    instructions = new ArrayList<>(Arrays.asList(3,3,1105,-1,9,1101,0,0,12,4,12,99,1))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(1))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1
 
-        // equals
-        case 8:
-            // Calculation parameters and location based on opcode-parameters
-            int par1 = inst.getParameter1() == 0 ? instructions[instructions[i+1]] : instructions[i+1]
-            int par2 = inst.getParameter2() == 0 ? instructions[instructions[i+2]] : instructions[i+2]
-            int resultLocation = instructions[i+3]
-            
-            // Evaluate equals check and write 1 or 0 to location
-            instructions[resultLocation] = par1 == par2 ? 1 : 0
+    instructions = new ArrayList<>(Arrays.asList(3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(7))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 999
 
-            // Jump to next instruction
-            i = i + 4
-            continue
+    instructions = new ArrayList<>(Arrays.asList(3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(8))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1000
 
-        case 99:
-            break
-
-        // Error Case
-        // Just print some helpful debug information.
-        default:
-            println "Current location: $i"
-            println "Opcode: ${inst.getOpcode()}"
-            println instructions[i] + "," + instructions[i+1] + "," + instructions[i+2] + "," + instructions[i+3]
-            throw new Exception()
-    }
-    break
-}
-
-// Converts instruction number into opcode and up to 3 parameters
-class Instruction {
-    private int opcode
-    private int parameter1
-    private int parameter2
-    private int parameter3
-
-    public Instruction(int instruction) {
-        // tag::opcodeParameters[]
-        this.opcode = Math.floor((instruction % 100))
-        this.parameter1 = Math.floor((instruction % 1000) / 100)
-        this.parameter2 = Math.floor((instruction % 10000) / 1000)
-        this.parameter3 = Math.floor(instruction / 10000)
-        // end::opcodeParameters[]
-    }
-
-    public int getOpcode() {return this.opcode}
-    public int getParameter1() {return this.parameter1}
-    public int getParameter2() {return this.parameter2}
-    public int getParameter3() {return this.parameter3}
+    instructions = new ArrayList<>(Arrays.asList(3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99))
+    icc = new IntCodeComputer(instructions)
+    inputValues = new ArrayList<>(Arrays.asList(9))
+    icc.setInput(inputValues)
+    outputValues = icc.execute()
+    assert outputValues[0] == 1001
 }
